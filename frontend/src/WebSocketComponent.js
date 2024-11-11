@@ -4,12 +4,12 @@ import React, { useEffect } from 'react';
 
 const WebSocketComponent = ({ account, onSolBalanceReceived, onSPLBalancesReceived }) => {
   useEffect(() => {
-    // 连接到后端 WebSocket 服务器
-    const ws = new WebSocket('ws://localhost:5000'); // 如有需要，请更新 URL
+    // 修改部分：更新 WebSocket 的 URL，添加指定的路徑 `/ws`
+    const ws = new WebSocket('ws://localhost:5001/ws'); // 更新了 URL，添加了 '/ws' 路徑
 
     ws.onopen = () => {
-      console.log('WebSocket 已连接');
-      // 发送订阅账户更新的请求
+      console.log('WebSocket 已連接');
+      // 发送訂閱帳戶更新的請求
       ws.send(JSON.stringify({ action: 'subscribe', account }));
     };
 
@@ -23,7 +23,7 @@ const WebSocketComponent = ({ account, onSolBalanceReceived, onSPLBalancesReceiv
     };
 
     ws.onclose = () => {
-      console.log('WebSocket 已断开');
+      console.log('WebSocket 已斷開');
     };
 
     return () => {
