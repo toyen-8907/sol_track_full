@@ -1,94 +1,33 @@
-.App {
-  text-align: center;
-  font-family: "Helvetica", "Arial","LiHei Pro","黑體-繁","微軟正黑體", sans-serif;
-  font-size: larger;
-  overflow-x: hidden; /* 禁用横向滚动条 */
+/* 佈局樣式 */
+.home-container {
+  display: flex;
 }
 
-.App-logo {
-  height: 40vmin;
-  pointer-events: none;
+/* 左側：錢包總覽 */
+.left-side {
+  width: 70%;
+  padding: 20px;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
-  }
+.add-account {
+  margin-bottom: 20px;
 }
 
-.App-header {
-  background-color: #282c34;
-  min-height: 10vh;
+.wallet-overview {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  font-size: calc(10px + 2vmin);
-  color: white;
 }
 
-.App-link {
-  color: #61dafb;
+.wallet-item {
+  border-bottom: 1px solid #ccc;
+  padding: 10px 0;
 }
 
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+/* 右側：買入代幣功能區域 */
+.right-side {
+  width: 30%;
+  padding: 20px;
+  border-left: 1px solid #ccc;
 }
 
-
-
-
-
-.dashboard-bottom-container{
-  display: flex;
-  width: 100%;
-  padding:0;
-  justify-content: center;
-}
-
-.dashboard_left{
-  font-size: larger;
-  font-family: "Helvetica", "Arial","LiHei Pro","黑體-繁","微軟正黑體", sans-serif;
-  padding: right 250px ;
-}
-
-.dashboard_right{
-  font-size: large;
-  font-family: "Helvetica", "Arial","LiHei Pro","黑體-繁","微軟正黑體", sans-serif;
-  margin-left: 100px;
-  gap: 15px; /* 項目之間的間距 */
- 
-  margin-top: 20px;
-}
-
-.token-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr); /* 三列布局 */
-  gap: 20px; /* 卡片间距 */
-}
-
-.token-item {
-  padding: 15px;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  text-align: center;
-  cursor: pointer;
-  transition: background-color 0.2s ease;
-}
-
-.token-item:hover {
-  background-color: #f0f0f0; /* 鼠标悬停效果 */
-}
-
-.token-item p {
-  margin: 5px 0;
-  font-size: 14px;
-  color: #333;
-}
- 
-
+/* 其他樣式可根據需要添加 */

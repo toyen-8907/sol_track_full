@@ -14,12 +14,12 @@ const port = process.env.PORT || 5001;
 
 app.use(cors());
 
-// Solana 连接
+// Solana 連接
 const RPC_ENDPOINT = process.env.RPC_ENDPOINT;
 const WS_ENDPOINT = process.env.WS_ENDPOINT;
 
 if (!RPC_ENDPOINT || !WS_ENDPOINT) {
-  console.error('请在 .env 文件中定义 RPC_ENDPOINT 和 WS_ENDPOINT。');
+  console.error('請在 .env 檔案中定義 RPC_ENDPOINT 和 WS_ENDPOINT。');
   process.exit(1);
 }
 
@@ -28,19 +28,19 @@ const connection = new Connection(RPC_ENDPOINT, {
   wsEndpoint: WS_ENDPOINT,
 });
 
-// **修改部分：将函数定义移动到使用之前**
+// **修改部分：將函數定義移動到使用之前**
 async function fetchSolBalance(walletAddress) {
   try {
     const balance = await connection.getBalance(new PublicKey(walletAddress));
-    return balance / 1000000000; // 将 lamports 转换为 SOL
+    return balance / 1000000000; // 將 lamports 轉換為 SOL
   } catch (error) {
-    console.error("获取 SOL 余额时出错:", error);
+    console.error("取得 SOL 餘額時出錯:", error);
     throw error;
   }
 }
 
 /**
- * 获取所有 SPL 代币余额的辅助函数
+ * 取得所有 SPL 代幣餘額的輔助函數
  */
 async function fetchAllSplTokenBalances(walletAddress) {
   try {
@@ -60,23 +60,23 @@ async function fetchAllSplTokenBalances(walletAddress) {
     });
     return tokenBalances;
   } catch (error) {
-    console.error("获取 SPL 代币余额时出错:", error);
+    console.error("取得 SPL 代幣餘額時出錯:", error);
     throw error;
   }
 }
 
-// **确保 REST API 路由在函数定义之后**
+// **確保 REST API 路由在函數定義之後**
 
 app.get('/solBalance/:address', async (req, res) => {
   const { address } = req.params;
-  console.log('Received address:', address);
+  console.log('接收到地址:', address);
   try {
     const cleanAddress = address.replace(/\s+/g, '');
     const balance = await fetchSolBalance(cleanAddress);
     res.json({ balance });
   } catch (error) {
-    console.error('获取 SOL 余额时出错:', error);
-    res.status(500).json({ error: '获取 SOL 余额时出错', details: error.message });
+    console.error('取得 SOL 餘額時出錯:', error);
+    res.status(500).json({ error: '取得 SOL 餘額時出錯', details: error.message });
   }
 });
 
@@ -87,14 +87,14 @@ app.get('/splBalances/:address', async (req, res) => {
     const balances = await fetchAllSplTokenBalances(cleanAddress);
     res.json(balances);
   } catch (error) {
-    console.error('获取 SPL 代币余额时出错:', error);
-    res.status(500).json({ error: '获取 SPL 代币余额时出错', details: error.message });
+    console.error('取得 SPL 代幣餘額時出錯:', error);
+    res.status(500).json({ error: '取得 SPL 代幣餘額時出錯', details: error.message });
   }
 });
 
-// **其余代码保持不变，或者根据之前的建议进行调整**
+// **其餘代碼保持不變，或者根據之前的建議進行調整**
 
-// 在生产环境中，提供静态文件
+// 在生產環境中，提供靜態檔案
 if (process.env.NODE_ENV === 'production') {
   app.use(express.static(path.join(__dirname, '..', 'frontend', 'build')));
 
@@ -103,16 +103,16 @@ if (process.env.NODE_ENV === 'production') {
   });
 }
 
-// 启动服务器
+// 啟動伺服器
 const server = app.listen(port, () => {
-  console.log(`服务器正在运行在端口 ${port} http://localhost:${port}`);
+  console.log(`伺服器正在執行於端口 ${port} http://localhost:${port}`);
 });
 
-// 设置 WebSocket 服务器
+// 設置 WebSocket 伺服器
 const wss = new WebSocket.Server({ server, path: '/ws' });
 
 wss.on('connection', (ws) => {
-  console.log('前端已通过 WebSocket 连接');
+  console.log('前端已透過 WebSocket 連接');
 
   ws.on('message', async (message) => {
     try {
@@ -120,7 +120,7 @@ wss.on('connection', (ws) => {
       const { action, account } = data;
 
       if (action === 'subscribe') {
-        // 订阅账户变化
+        // 訂閱帳戶變化
         const publicKey = new PublicKey(account);
 
         const subscriptionId = await connection.onAccountChange(
@@ -137,35 +137,35 @@ wss.on('connection', (ws) => {
               const splTokenBalances = await fetchAllSplTokenBalances(account);
               ws.send(JSON.stringify({ type: 'splBalances', balances: splTokenBalances }));
             } catch (error) {
-              console.error('处理账户变化时出错:', error);
+              console.error('處理帳戶變化時出錯:', error);
             }
           },
           'finalized'
         );
 
-        // 在 WebSocket 对象中存储订阅 ID
+        // 在 WebSocket 對象中儲存訂閱 ID
         ws.subscriptionId = subscriptionId;
       }
     } catch (error) {
-      console.error('处理 WebSocket 消息时出错:', error);
+      console.error('處理 WebSocket 訊息時出錯:', error);
     }
   });
 
   ws.on('error', (error) => {
-    console.error('WebSocket 连接出错:', error);
+    console.error('WebSocket 連接出錯:', error);
   });
 
   ws.on('close', () => {
-    console.log('前端已断开连接');
+    console.log('前端已斷開連接');
 
-    // 当客户端断开连接时，移除账户变化监听器
+    // 當客戶端斷開連接時，移除帳戶變化監聽器
     if (ws.subscriptionId !== undefined) {
       connection.removeAccountChangeListener(ws.subscriptionId)
         .then(() => {
-          console.log('已移除账户变化监听器。');
+          console.log('已移除帳戶變化監聽器。');
         })
         .catch((error) => {
-          console.error('移除账户变化监听器时出错:', error);
+          console.error('移除帳戶變化監聽器時出錯:', error);
         });
     }
   });
