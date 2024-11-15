@@ -1,33 +1,176 @@
-/* 佈局樣式 */
+
+/* App.css */
+
+/* 基本重置 */
+body, h1, h2, h3, h4, h5, h6, p, ul, input, button {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Arial', sans-serif;
+  background-color: #f0f2f5;
+}
+
+/* 標頭樣式 */
+.App-header {
+  background-color: #001529;
+  padding: 20px;
+  color: #fff;
+  text-align: center;
+}
+
+/* 主容器 */
 .home-container {
   display: flex;
+  padding: 20px;
 }
 
 /* 左側：錢包總覽 */
 .left-side {
-  width: 70%;
-  padding: 20px;
+  flex: 1;
+  margin-right: 20px;
 }
 
 .add-account {
   margin-bottom: 20px;
 }
 
+.add-account input[type="text"] {
+  width: calc(100% - 120px);
+  padding: 10px;
+  font-size: 16px;
+  border: 1px solid #d9d9d9;
+  border-radius: 4px;
+}
+
+.add-account button {
+  width: 100px;
+  padding: 10px;
+  font-size: 16px;
+  margin-left: 10px;
+  background-color: #1890ff;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.add-account button:hover {
+  background-color: #40a9ff;
+}
+
 .wallet-overview {
-  display: flex;
-  flex-direction: column;
+  margin-top: 20px;
 }
 
 .wallet-item {
-  border-bottom: 1px solid #ccc;
-  padding: 10px 0;
+  background-color: #fff;
+  border: 1px solid #d9d9d9;
+  padding: 15px;
+  margin-bottom: 15px;
+  border-radius: 4px;
+  transition: box-shadow 0.3s;
+}
+
+.wallet-item:hover {
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.wallet-item h3 {
+  margin-bottom: 10px;
+  color: #1890ff;
+  cursor: pointer;
+}
+
+.wallet-item h3:hover {
+  text-decoration: underline;
+}
+
+.wallet-item p {
+  color: #333;
 }
 
 /* 右側：買入代幣功能區域 */
 .right-side {
-  width: 30%;
+  width: 40%;
   padding: 20px;
-  border-left: 1px solid #ccc;
+  background-color: #fff;
+  border: 1px solid #d9d9d9;
+  border-radius: 4px;
 }
 
-/* 其他樣式可根據需要添加 */
+.right-side h3 {
+  margin-bottom: 20px;
+  color: #001529;
+}
+
+/* 響應式設計 */
+@media (max-width: 768px) {
+  .home-container {
+    flex-direction: column;
+  }
+
+  .left-side, .right-side {
+    width: 100%;
+    margin-right: 0;
+  }
+
+  .right-side {
+    margin-top: 20px;
+  }
+
+  .add-account input[type="text"] {
+    width: 100%;
+    margin-bottom: 10px;
+  }
+
+  .add-account button {
+    width: 100%;
+    margin-left: 0;
+  }
+}
+
+/* WalletDetails.css */
+
+/* 錢包詳細信息容器 */
+.wallet-details {
+  padding: 20px;
+}
+
+/* 餘額信息樣式 */
+.balance-info {
+  margin-bottom: 20px;
+}
+
+/* SPL 代幣列表容器 */
+.token-grid {
+  width: 100%;
+  max-height: 300px; /* 固定高度，可根據需要調整 */
+  overflow-y: auto; /* 當內容超出高度時，顯示垂直捲軸 */
+  border: 1px solid #d9d9d9;
+  padding: 10px;
+  background-color: #fff;
+}
+
+/* 單個代幣項目的樣式 */
+.token-item {
+  padding: 10px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.token-item:last-child {
+  border-bottom: none;
+}
+
+/* 可選：美化滾動條樣式（僅適用於 Webkit 瀏覽器） */
+.token-grid::-webkit-scrollbar {
+  width: 8px;
+}
+
+.token-grid::-webkit-scrollbar-thumb {
+  background-color: rgba(0,0,0,0.2);
+  border-radius: 4px;
+}
+

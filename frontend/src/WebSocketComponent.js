@@ -18,12 +18,20 @@ const WebSocketComponent = ({ account, onSolBalanceReceived, onSPLBalancesReceiv
 
     ws.onmessage = (event) => {
       const data = JSON.parse(event.data);
+      console.log('收到消息:', data);
+    
+      // 处理不同类型的消息
       if (data.type === 'solBalance') {
         onSolBalanceReceived(parseFloat(data.balance));
+        console.log('SOL 余额更新:', data.balance);
       } else if (data.type === 'splBalances') {
         onSPLBalancesReceived(data.balances);
+        console.log('SPL 代币余额更新:', data.balances);
+      } else if (data.type === 'heartbeat') {
+        console.log('收到心跳消息');
       }
     };
+    
 
     ws.onclose = () => {
       console.log('WebSocket 已斷開');

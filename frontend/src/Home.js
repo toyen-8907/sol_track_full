@@ -1,7 +1,9 @@
 // Home.js
 
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import './App.css';
+import WebSocketComponent from './WebSocketComponent';
 
 const Home = () => {
   const [accounts, setAccounts] = useState([
@@ -11,7 +13,9 @@ const Home = () => {
   // 後續改成接入資料庫讀取
   const [balances, setBalances] = useState({});
   const [newAddress, setNewAddress] = useState('');
+  
   const navigate = useNavigate();
+  const wsRef = useRef(null);
 
   // 從後端獲取初始餘額
   useEffect(() => {
