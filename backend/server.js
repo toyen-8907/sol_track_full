@@ -24,7 +24,7 @@ if (!RPC_ENDPOINT || !WS_ENDPOINT) {
 }
 
 const connection = new Connection(RPC_ENDPOINT, {
-  commitment: 'finalized',
+  commitment: 'confirmed',
   wsEndpoint: WS_ENDPOINT,
 });
 
@@ -112,12 +112,10 @@ const server = app.listen(port, () => {
 const wss = new WebSocket.Server({ server, path: '/ws' });
 
 wss.on('connection', (ws) => {
-  console.log('前端已透过 WebSocket 连接');
+  console.log('前端已通过 WebSocket 连接');
 
-  // 在连接建立时，设置心跳定时器
-  const interval = setInterval(() => {
-    ws.send(JSON.stringify({ type: 'heartbeat', message: '心跳测试' }));
-  }, 500000);
+  // 初始化一个 Map 来存储多个账户的订阅信息
+  ws.subscribedAccounts = new Map();
 
   ws.on('message', async (message) => {
     try {
@@ -125,60 +123,72 @@ wss.on('connection', (ws) => {
       const { action, account } = data;
 
       if (action === 'subscribe') {
-        // 订阅账户变化
+        // 如果收到订阅请求
         const publicKey = new PublicKey(account);
 
+        // 调用 Solana 的 onAccountChange 来监听账户变化
         const subscriptionId = connection.onAccountChange(
           publicKey,
           async (accountInfo) => {
-            console.log('检测到账户变动');
+            console.log(`检测到账户 ${account} 的变动`);
             try {
               const lamports = accountInfo.lamports;
-              console.log('账户 lamports:', lamports);
+              const balance = lamports / 1000000000; // 转换为 SOL
 
-              if (lamports !== undefined) {
-                const balance = lamports / 1000000000;
-                ws.send(JSON.stringify({ type: 'solBalance', balance }));
-                console.log('发送 SOL 余额更新:', balance);
-              }
+              // 向客户端发送更新的 SOL 余额
+              ws.send(
+                JSON.stringify({ type: 'solBalance', account, balance })
+              );
 
+              // 获取并发送 SPL 代币余额
               const splTokenBalances = await fetchAllSplTokenBalances(account);
-              ws.send(JSON.stringify({ type: 'splBalances', balances: splTokenBalances }));
-              console.log('发送 SPL 代币余额更新:', splTokenBalances);
+              ws.send(
+                JSON.stringify({
+                  type: 'splBalances',
+                  account,
+                  balances: splTokenBalances,
+                })
+              );
             } catch (error) {
-              console.error('处理账户变动时出错:', error);
+              console.error(`处理账户 ${account} 的变动时出错:`, error);
             }
           },
-          'finalized'
+          'finalized' // Solana 的确认级别
         );
 
-        // 在 WebSocket 对象中存储订阅 ID
-        ws.subscriptionId = subscriptionId;
+        // 将账户和订阅 ID 存入 Map
+        ws.subscribedAccounts.set(account, subscriptionId);
+        console.log(`账户 ${account} 已订阅，订阅 ID: ${subscriptionId}`);
+      }
+
+      if (action === 'unsubscribe') {
+        // 如果收到取消订阅请求
+        const subscriptionId = ws.subscribedAccounts.get(account);
+        if (subscriptionId !== undefined) {
+          await connection.removeAccountChangeListener(subscriptionId);
+          ws.subscribedAccounts.delete(account); // 从 Map 中移除
+          console.log(`账户 ${account} 的订阅已取消`);
+        } else {
+          console.warn(`账户 ${account} 没有订阅，不需要取消`);
+        }
       }
     } catch (error) {
       console.error('处理 WebSocket 消息时出错:', error);
     }
   });
 
-  ws.on('error', (error) => {
-    console.error('WebSocket 连接出错:', error);
-  });
-
   ws.on('close', () => {
-    console.log('前端已断开连接');
-
-    // 清除心跳定时器
-    clearInterval(interval);
-
-    // 当客户端断开连接时，移除账户变化监听器
-    if (ws.subscriptionId !== undefined) {
-      connection.removeAccountChangeListener(ws.subscriptionId)
-        .then(() => {
-          console.log('已移除账户变化监听器。');
-        })
-        .catch((error) => {
-          console.error('移除账户变化监听器时出错:', error);
-        });
-    }
+    console.log('前端已断开连接 後端已接收');
+    // 移除所有账户的订阅
+    ws.subscribedAccounts.forEach(async (subscriptionId, account) => {
+      try {
+        await connection.removeAccountChangeListener(subscriptionId);
+        console.log(`账户 ${account} 的监听器已移除`);
+      } catch (error) {
+        console.error(`移除账户 ${account} 的监听器时出错:`, error);
+      }
+    });
+    ws.subscribedAccounts.clear(); // 清空 Map
   });
 });
+
