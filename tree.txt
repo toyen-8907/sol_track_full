@@ -1,0 +1,54 @@
+.
+├── backend
+│   ├── package-lock.json
+│   ├── package.json
+│   ├── server.js
+│   └── src
+│       └── routes
+│           └── solanaService.js
+├── frontend
+│   ├── Dockerfile
+│   ├── README.md
+│   ├── build
+│   │   ├── asset-manifest.json
+│   │   ├── favicon.ico
+│   │   ├── index.html
+│   │   ├── logo192.png
+│   │   ├── logo512.png
+│   │   ├── manifest.json
+│   │   ├── robots.txt
+│   │   └── static
+│   │       ├── css
+│   │       │   ├── main.90d25749.css
+│   │       │   └── main.90d25749.css.map
+│   │       └── js
+│   │           ├── 453.40b0de41.chunk.js
+│   │           ├── 453.40b0de41.chunk.js.map
+│   │           ├── main.b253d371.js
+│   │           ├── main.b253d371.js.LICENSE.txt
+│   │           └── main.b253d371.js.map
+│   ├── package-lock.json
+│   ├── package.json
+│   ├── public
+│   │   ├── favicon.ico
+│   │   ├── index.html
+│   │   ├── logo192.png
+│   │   ├── logo512.png
+│   │   ├── manifest.json
+│   │   └── robots.txt
+│   └── src
+│       ├── App.css
+│       ├── App.js
+│       ├── App.test.js
+│       ├── Home.js
+│       ├── WalletDetails.js
+│       ├── WebSocketComponent.js
+│       ├── googleSheetAddress.js
+│       ├── index.css
+│       ├── index.js
+│       ├── logo.svg
+│       ├── reportWebVitals.js
+│       └── setupTests.js
+└── tree.txt
+
+11 directories, 41 files

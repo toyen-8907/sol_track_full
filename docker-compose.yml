@@ -1,0 +1,27 @@
+version: '3.8'
+services:
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile # 使用開發環境 Dockerfile
+    ports:
+      - "3000:3000"              # 對外暴露 3000 埠
+    volumes:
+      - ./frontend:/app          # 掛載本地開發代碼
+      - /app/node_modules        # 避免 node_modules 被覆蓋
+    environment:
+      - NODE_ENV=development     # 設定開發環境變數
+    depends_on:
+      - backend                  # 等待 backend 啟動
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile     # 使用 Backend 的 Dockerfile
+    ports:
+      - "5001:5001"              # 對外暴露 5001 埠
+    volumes:
+      - ./backend:/app           # 掛載本地後端代碼
+      - /app/node_modules        # 避免 node_modules 被覆蓋
+    environment:
+      - NODE_ENV=development     # 設定開發環境變數
