@@ -1,4 +1,3 @@
-version: '3.8'
 services:
   frontend:
     build:
@@ -7,12 +6,12 @@ services:
     ports:
       - "3000:3000"              # 對外暴露 3000 埠
     volumes:
-      - ./frontend:/app          # 掛載本地開發代碼
       - /app/node_modules        # 避免 node_modules 被覆蓋
+      - ./frontend:/app          # 掛載本地開發代碼
     environment:
       - NODE_ENV=development     # 設定開發環境變數
     depends_on:
-      - backend                  # 等待 backend 啟動
+      - backend     
 
   backend:
     build:
