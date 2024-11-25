@@ -1,24 +1,22 @@
-// WalletDetails.js
-
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams } from 'react-router-dom';
-import WebSocketComponent from './WebSocketComponent';
 
 const WalletDetails = () => {
   const { address } = useParams();
   const [balance, setBalance] = useState(0);
   const [percentageChange, setPercentageChange] = useState(null);
   const [splBalances, setSplBalances] = useState([]);
+  const wsRef = useRef(null); // 用于存储 WebSocket 实例
 
-  // 初始加載 SOL 和 SPL 代幣餘額
+  // 初始加载 SOL 和 SPL 代币余额
   useEffect(() => {
     const fetchBalances = async () => {
       try {
-        const solResponse = await fetch(`/solBalance/${address}`);
+        const solResponse = await fetch(`http://localhost:5001/solBalance/${address}`);
         const solData = await solResponse.json();
         setBalance(solData.balance);
 
-        const splResponse = await fetch(`/splBalances/${address}`);
+        const splResponse = await fetch(`http://localhost:5001/splBalances/${address}`);
         const splData = await splResponse.json();
 
         if (Array.isArray(splData)) {
@@ -36,7 +34,44 @@ const WalletDetails = () => {
     fetchBalances();
   }, [address]);
 
-  // 處理從 WebSocket 接收到的新 SOL 餘額
+  // WebSocket 连接和监听
+  useEffect(() => {
+    // 初始化 WebSocket 连接
+    wsRef.current = new WebSocket('ws://localhost:5001/ws');
+
+    wsRef.current.onopen = () => {
+      console.log('WebSocket 已连接');
+      // 订阅当前钱包地址
+      wsRef.current.send(JSON.stringify({ action: 'subscribe', accounts: [address] }));
+    };
+
+    wsRef.current.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      if (data.type === 'solBalance') {
+        handleSolBalanceReceived(data.balance);
+      } else if (data.type === 'splBalances') {
+        handleSPLBalancesReceived(data.balances);
+      }
+    };
+
+    wsRef.current.onclose = () => {
+      console.log('WebSocket 已断开');
+    };
+
+    wsRef.current.onerror = (error) => {
+      console.error('WebSocket 发生错误:', error);
+    };
+
+    // 页面卸载时断开 WebSocket 连接
+    return () => {
+      if (wsRef.current) {
+        wsRef.current.close(); // 主动断开连接
+        wsRef.current = null; // 清除引用
+      }
+    };
+  }, [address]);
+
+  // 处理从 WebSocket 接收到的新 SOL 余额
   const handleSolBalanceReceived = useCallback((newBalance) => {
     if (balance !== null && balance !== 0) {
       const change = ((newBalance - balance) / balance) * 100;
@@ -45,9 +80,8 @@ const WalletDetails = () => {
     setBalance(newBalance);
   }, [balance]);
 
-  // 處理從 WebSocket 接收到的新的 SPL 代幣餘額
+  // 处理从 WebSocket 接收到的新 SPL 代币余额
   const handleSPLBalancesReceived = useCallback((receivedBalances) => {
-    console.log('通過 WebSocket 接收到的 SPL 代幣數據:', receivedBalances);
     const nonZeroBalances = Array.isArray(receivedBalances) ?
       receivedBalances.filter(token => parseFloat(token.balance) > 0) :
       [];
@@ -59,13 +93,6 @@ const WalletDetails = () => {
       <h2>錢包詳細資訊</h2>
       <p>地址: {address}</p>
 
-      {/* 引入 WebSocketComponent，接收實時更新 */}
-      <WebSocketComponent
-        account={address}
-        onSolBalanceReceived={handleSolBalanceReceived}
-        onSPLBalancesReceived={handleSPLBalancesReceived}
-      />
-
       <div className="balance-info">
         <h3>餘額: {balance} $SOL</h3>
         {percentageChange !== null && (
@@ -75,17 +102,17 @@ const WalletDetails = () => {
         )}
       </div>
 
-      {/* SPL 代幣餘額列表 */}
+      {/* SPL 代币余额列表 */}
       <div className="token-grid">
         {splBalances.length > 0 ? (
           splBalances.map((token, index) => (
             <div key={index} className="token-item">
-              <p>TOKEN 合約地址: {token.mint.slice(0, 7)}...{token.mint.slice(-7)}</p>
-              <p>錢包餘額: {parseFloat(token.balance).toFixed(4)}</p>
+              <p>TOKEN 合约地址: {token.mint.slice(0, 7)}...{token.mint.slice(-7)}</p>
+              <p>钱包余额: {parseFloat(token.balance).toFixed(4)}</p>
             </div>
           ))
         ) : (
-          <p>此錢包沒有持有任何 SPL 代幣。</p>
+          <p>此钱包没有持有任何 SPL 代币。</p>
         )}
       </div>
     </div>

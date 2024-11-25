@@ -19,23 +19,23 @@ const Home = () => {
   useEffect(() => {
     const fetchBalances = async () => {
       try {
-        for (const account of accounts) {
+        const existingAccounts = Object.keys(balances);
+        const newAccounts = accounts.filter(account => !existingAccounts.includes(account));
+
+        for (const account of newAccounts) {
           const solResponse = await fetch(`http://localhost:5001/solBalance/${account}`);
           if (!solResponse.ok) {
             throw new Error(`HTTP error! status: ${solResponse.status}`);
           }
           const solData = await solResponse.json();
 
-          setBalances(prev => {
-            const prevBalance = prev[account]?.current || 0;
-            return {
-              ...prev,
-              [account]: {
-                current: solData.balance,
-                previous: prevBalance,
-              },
-            };
-          });
+          setBalances(prev => ({
+            ...prev,
+            [account]: {
+              current: solData.balance,
+              previous: 0, // 新账户的上次余额默认为 0
+            },
+          }));
         }
       } catch (error) {
         console.error('取得初始餘額時出錯:', error);
@@ -72,6 +72,12 @@ const Home = () => {
     }
   };
 
+  const handleSPLBalancesReceived = useCallback((account, balances) => {
+    // 在这里处理 SPL 代币余额的更新
+    console.log('收到 SPL 代币余额更新:', account, balances);
+    // 您可以根据需要更新状态或执行其他操作
+  }, []);
+
   // 計算百分比變化
   const calculatePercentageChange = (previous, current) => {
     if (previous === 0) return 'N/A';
@@ -84,7 +90,8 @@ const Home = () => {
       <WebSocketComponent
         accounts={accounts}
         onSolBalanceReceived={handleSolBalanceReceived}
-        onSPLBalancesReceived={onSPLBalancesReceived}
+        onSPLBalancesReceived={handleSPLBalancesReceived} // 确保传递了函数
+
       />
 
       {/* 左側：錢包總覽和新增地址 */}

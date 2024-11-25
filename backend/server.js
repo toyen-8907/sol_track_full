@@ -111,6 +111,8 @@ const server = app.listen(port, () => {
 // 設置 WebSocket 伺服器
 const wss = new WebSocket.Server({ server, path: '/ws' });
 
+// server.js
+
 wss.on('connection', (ws) => {
   console.log('前端已通过 WebSocket 连接');
 
@@ -120,56 +122,126 @@ wss.on('connection', (ws) => {
   ws.on('message', async (message) => {
     try {
       const data = JSON.parse(message);
-      const { action, account } = data;
+      const { action } = data;
 
       if (action === 'subscribe') {
-        // 如果收到订阅请求
-        const publicKey = new PublicKey(account);
+        const accounts = data.accounts || [];
+        if (accounts.length === 0) {
+          console.error('订阅请求的账号列表为空');
+          return;
+        }
 
-        // 调用 Solana 的 onAccountChange 来监听账户变化
-        const subscriptionId = connection.onAccountChange(
-          publicKey,
-          async (accountInfo) => {
-            console.log(`检测到账户 ${account} 的变动`);
-            try {
-              const lamports = accountInfo.lamports;
-              const balance = lamports / 1000000000; // 转换为 SOL
+        for (const account of accounts) {
+          if (!ws.subscribedAccounts.has(account)) {
+            // 如果尚未订阅该账号，则进行订阅
+            const publicKey = new PublicKey(account);
 
-              // 向客户端发送更新的 SOL 余额
-              ws.send(
-                JSON.stringify({ type: 'solBalance', account, balance })
-              );
+            const subscriptionId = connection.onAccountChange(
+              publicKey,
+              async (accountInfo) => {
+                console.log(`检测到账户 ${account} 的变动`);
+                try {
+                  const lamports = accountInfo.lamports;
+                  const balance = lamports / 1000000000; // 转换为 SOL
 
-              // 获取并发送 SPL 代币余额
-              const splTokenBalances = await fetchAllSplTokenBalances(account);
-              ws.send(
-                JSON.stringify({
-                  type: 'splBalances',
-                  account,
-                  balances: splTokenBalances,
-                })
-              );
-            } catch (error) {
-              console.error(`处理账户 ${account} 的变动时出错:`, error);
+                  // 向客户端发送更新的 SOL 余额
+                  ws.send(
+                    JSON.stringify({ type: 'solBalance', account, balance })
+                  );
+
+                  // 获取并发送 SPL 代币余额
+                  const splTokenBalances = await fetchAllSplTokenBalances(account);
+                  ws.send(
+                    JSON.stringify({
+                      type: 'splBalances',
+                      account,
+                      balances: splTokenBalances,
+                    })
+                  );
+                } catch (error) {
+                  console.error(`处理账户 ${account} 的变动时出错:`, error);
+                }
+              },
+              'finalized' // Solana 的确认级别
+            );
+
+            // 将账户和订阅 ID 存入 Map
+            ws.subscribedAccounts.set(account, subscriptionId);
+            console.log(`账户 ${account} 已订阅，订阅 ID: ${subscriptionId}`);
+          } else {
+            console.log(`账户 ${account} 已经订阅，跳过`);
+          }
+        }
+      }
+
+      if (action === 'updateSubscriptions') {
+        const newAccounts = data.accounts || [];
+        const currentAccounts = Array.from(ws.subscribedAccounts.keys());
+
+        // 取消不再需要的订阅
+        for (const account of currentAccounts) {
+          if (!newAccounts.includes(account)) {
+            const subscriptionId = ws.subscribedAccounts.get(account);
+            if (subscriptionId !== undefined) {
+              await connection.removeAccountChangeListener(subscriptionId);
+              ws.subscribedAccounts.delete(account);
+              console.log(`已取消对账户 ${account} 的订阅`);
             }
-          },
-          'finalized' // Solana 的确认级别
-        );
+          }
+        }
 
-        // 将账户和订阅 ID 存入 Map
-        ws.subscribedAccounts.set(account, subscriptionId);
-        console.log(`账户 ${account} 已订阅，订阅 ID: ${subscriptionId}`);
+        // 添加新的订阅
+        for (const account of newAccounts) {
+          if (!currentAccounts.includes(account)) {
+            const publicKey = new PublicKey(account);
+
+            const subscriptionId = connection.onAccountChange(
+              publicKey,
+              async (accountInfo) => {
+                console.log(`检测到账户 ${account} 的变动`);
+                try {
+                  const lamports = accountInfo.lamports;
+                  const balance = lamports / 1000000000; // 转换为 SOL
+
+                  // 向客户端发送更新的 SOL 余额
+                  ws.send(
+                    JSON.stringify({ type: 'solBalance', account, balance })
+                  );
+
+                  // 获取并发送 SPL 代币余额
+                  const splTokenBalances = await fetchAllSplTokenBalances(account);
+                  ws.send(
+                    JSON.stringify({
+                      type: 'splBalances',
+                      account,
+                      balances: splTokenBalances,
+                    })
+                  );
+                } catch (error) {
+                  console.error(`处理账户 ${account} 的变动时出错:`, error);
+                }
+              },
+              'finalized' // Solana 的确认级别
+            );
+
+            // 将账户和订阅 ID 存入 Map
+            ws.subscribedAccounts.set(account, subscriptionId);
+            console.log(`账户 ${account} 已订阅，订阅 ID: ${subscriptionId}`);
+          }
+        }
       }
 
       if (action === 'unsubscribe') {
-        // 如果收到取消订阅请求
-        const subscriptionId = ws.subscribedAccounts.get(account);
-        if (subscriptionId !== undefined) {
-          await connection.removeAccountChangeListener(subscriptionId);
-          ws.subscribedAccounts.delete(account); // 从 Map 中移除
-          console.log(`账户 ${account} 的订阅已取消`);
-        } else {
-          console.warn(`账户 ${account} 没有订阅，不需要取消`);
+        const accounts = data.accounts || [];
+        for (const account of accounts) {
+          const subscriptionId = ws.subscribedAccounts.get(account);
+          if (subscriptionId !== undefined) {
+            await connection.removeAccountChangeListener(subscriptionId);
+            ws.subscribedAccounts.delete(account);
+            console.log(`已取消对账户 ${account} 的订阅`);
+          } else {
+            console.warn(`账户 ${account} 未订阅，无需取消`);
+          }
         }
       }
     } catch (error) {
@@ -178,7 +250,7 @@ wss.on('connection', (ws) => {
   });
 
   ws.on('close', () => {
-    console.log('前端已断开连接 後端已接收');
+    console.log('前端已断开连接，后端已接收');
     // 移除所有账户的订阅
     ws.subscribedAccounts.forEach(async (subscriptionId, account) => {
       try {
@@ -191,4 +263,3 @@ wss.on('connection', (ws) => {
     ws.subscribedAccounts.clear(); // 清空 Map
   });
 });
-
