@@ -2,6 +2,7 @@ import React, { useState, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './App.css';
 import WebSocketComponent from './WebSocketComponent';
+import fetch from 'node-fetch';
 
 const Home = () => {
   const [accounts, setAccounts] = useState([
@@ -12,7 +13,7 @@ const Home = () => {
 
   // 修改 balances 狀態結構，包含 current 和 previous
   const [balances, setBalances] = useState({});
-
+ 
   const [newAddress, setNewAddress] = useState('');
 
   // 從後端獲取初始餘額
