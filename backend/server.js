@@ -39,6 +39,9 @@ async function fetchSolBalance(walletAddress) {
   }
 }
 
+
+
+
 /**
  * 取得所有 SPL 代幣餘額的輔助函數
  */
@@ -65,6 +68,14 @@ async function fetchAllSplTokenBalances(walletAddress) {
   }
 }
 
+// **拿取SPL代幣名稱**
+async function getTokenMetadata(mintAddress) {
+  const provider = new TokenListProvider();
+  const tokenList = await provider.resolve();
+  const token = tokenList.find((token) => token.address === mintAddress);
+  return token;
+}
+
 // **確保 REST API 路由在函數定義之後**
 
 app.get('/solBalance/:address', async (req, res) => {
@@ -81,6 +92,19 @@ app.get('/solBalance/:address', async (req, res) => {
 });
 
 app.get('/splBalances/:address', async (req, res) => {
+  const { address } = req.params;
+  try {
+    const cleanAddress = address.replace(/\s+/g, '');
+    const balances = await fetchAllSplTokenBalances(cleanAddress);
+    res.json(balances);
+  } catch (error) {
+    console.error('取得 SPL 代幣餘額時出錯:', error);
+    res.status(500).json({ error: '取得 SPL 代幣餘額時出錯', details: error.message });
+  }
+});
+
+
+app.get('/splNames', async (req, res) => {
   const { address } = req.params;
   try {
     const cleanAddress = address.replace(/\s+/g, '');
