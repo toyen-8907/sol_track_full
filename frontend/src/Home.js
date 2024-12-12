@@ -8,13 +8,15 @@ const Home = () => {
   const [accounts, setAccounts] = useState([
     "GShiMwUiqpWfxyVxVnYo96upwQekeFVNrtMQT4aSH2RT",
     "CRVidEDtEUTYZisCxBZkpELzhQc9eauMLR3FWg74tReL",
+    "BeTvN1ucBnCj4Ef688i51KHn2oq35CWDvD2J5aLFp17t",
+    "DhuHgXwAesSsT9zFRYcwroNuW6PABxKcD7QojX88HkHT"
   ]);
   const navigate = useNavigate();
 
   // 修改 balances 狀態結構，包含 current 和 previous
   const [balances, setBalances] = useState({});
- 
   const [newAddress, setNewAddress] = useState('');
+  const [data, setData] = useState(null);
 
   // 從後端獲取初始餘額
   useEffect(() => {
@@ -47,7 +49,7 @@ const Home = () => {
   }, [accounts]);
 
   // 處理 WebSocket 接收到新的餘額更新
-  const handleSolBalanceReceived = useCallback((account, newBalance) => {
+  const handleSolBalanceReceived = useCallback(async (account, newBalance) => {
     setBalances(prev => {
       const prevBalance = prev[account]?.current || 0;
       return {
@@ -58,6 +60,19 @@ const Home = () => {
         },
       };
     });
+
+    // 在餘額變動的同時，向後端請求該帳戶的 swap 紀錄
+    try {
+      const response =  await fetch(`http://localhost:5001/accountSwaps/${account}`);
+      if (!response.ok) {
+        throw new Error(`取得 swaps 資料錯誤, 狀態碼: ${response.status}`);
+      }
+      const jsonData = await response.json(); // 等待解析完整的 JSON 資料
+      setData(jsonData); // 將 JSON 物件設置到 data 狀態
+    } catch (error) {
+      console.error('取得 swaps 資料時出錯:', error);
+    }
+
   }, []);
 
   // 處理 SPL 代幣餘額更新
@@ -86,6 +101,7 @@ const Home = () => {
     return change.toFixed(2);
   };
 
+  
   return (
     <div className="home-container">
       <WebSocketComponent
@@ -104,7 +120,7 @@ const Home = () => {
             value={newAddress}
             onChange={(e) => setNewAddress(e.target.value)}
           />
-          <button onClick={handleAddAccount}>新增錢包地址</button>
+          <button onClick={handleAddAccount}>新增錢包</button>
         </div>
 
         <div className="wallet-overview">
@@ -136,6 +152,7 @@ const Home = () => {
       <div className="right-side">
         <h3>買入代幣功能</h3>
         {/* 在此處添加您的買入代幣相關組件或代碼 */}
+        <p >{data ? JSON.stringify(data) : 'Loading...'}</p>
       </div>
     </div>
   );

@@ -99,6 +99,14 @@ body {
   background-color: #fff;
   border: 1px solid #d9d9d9;
   border-radius: 4px;
+  max-height: 80vh; /* 限制最大高度 */
+  max-width: 600px;  /* 限制最大寬度 */
+  overflow-y: auto;  /* 垂直滾動條 */
+  overflow-x: auto;  /* 水平滾動條 */
+  white-space: pre-wrap; /* 長字串自動換行 */
+  word-break: break-word; /* 長字串強制換行 */
+  border: 1px solid #ccc; /* 添加邊框讓區域更明顯（可選） */
+  padding: 10px; /* 增加內邊距讓內容不靠邊 */
 }
 
 .right-side h3 {

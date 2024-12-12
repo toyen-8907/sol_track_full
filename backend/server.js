@@ -1,5 +1,6 @@
 // server.js
 
+
 const express = require('express');
 const { Connection, PublicKey } = require('@solana/web3.js');
 const WebSocket = require('ws');
@@ -9,6 +10,9 @@ const path = require('path');
 
 dotenv.config();
 
+// 使用 node-fetch 模組
+const fetch = require('node-fetch');
+
 const app = express();
 const port = process.env.PORT || 5001;
 
@@ -17,9 +21,10 @@ app.use(cors());
 // Solana 連接
 const RPC_ENDPOINT = process.env.RPC_ENDPOINT;
 const WS_ENDPOINT = process.env.WS_ENDPOINT;
+const SPL_NAME_API_KEY = process.env.MORALIS_API_SPL_NAME;
 
-if (!RPC_ENDPOINT || !WS_ENDPOINT) {
-  console.error('請在 .env 檔案中定義 RPC_ENDPOINT 和 WS_ENDPOINT。');
+if (!RPC_ENDPOINT || !WS_ENDPOINT || !SPL_NAME_API_KEY) {
+  console.error('請在 .env 檔案中定義 RPC_ENDPOINT、WS_ENDPOINT 和 MORALIS_API_SPL_NAME。');
   process.exit(1);
 }
 
@@ -28,7 +33,7 @@ const connection = new Connection(RPC_ENDPOINT, {
   wsEndpoint: WS_ENDPOINT,
 });
 
-// **修改部分：將函數定義移動到使用之前**
+// 取得 SOL 餘額
 async function fetchSolBalance(walletAddress) {
   try {
     const balance = await connection.getBalance(new PublicKey(walletAddress));
@@ -39,12 +44,7 @@ async function fetchSolBalance(walletAddress) {
   }
 }
 
-
-
-
-/**
- * 取得所有 SPL 代幣餘額的輔助函數
- */
+// 取得所有 SPL 代幣餘額
 async function fetchAllSplTokenBalances(walletAddress) {
   try {
     const response = await connection.getParsedTokenAccountsByOwner(
@@ -68,16 +68,15 @@ async function fetchAllSplTokenBalances(walletAddress) {
   }
 }
 
-// **拿取SPL代幣名稱**
-async function getTokenMetadata(mintAddress) {
-  const provider = new TokenListProvider();
-  const tokenList = await provider.resolve();
-  const token = tokenList.find((token) => token.address === mintAddress);
-  return token;
-}
+// 假設您有一個 TokenListProvider（此處若無可略過）
+// async function getTokenMetadata(mintAddress) {
+//   const provider = new TokenListProvider();
+//   const tokenList = await provider.resolve();
+//   const token = tokenList.find((token) => token.address === mintAddress);
+//   return token;
+// }
 
-// **確保 REST API 路由在函數定義之後**
-
+// REST API 路由
 app.get('/solBalance/:address', async (req, res) => {
   const { address } = req.params;
   console.log('接收到地址:', address);
@@ -103,20 +102,56 @@ app.get('/splBalances/:address', async (req, res) => {
   }
 });
 
+app.get('/solana-tokens/:tokenaddress', async (req, res) => {
+  const { tokenaddress } = req.params;
+  const options = {
+    method: 'GET',
+    headers: {
+      accept: 'application/json',
+      'X-API-Key': SPL_NAME_API_KEY,
+    },
+  };
 
-app.get('/splNames', async (req, res) => {
-  const { address } = req.params;
   try {
-    const cleanAddress = address.replace(/\s+/g, '');
-    const balances = await fetchAllSplTokenBalances(cleanAddress);
-    res.json(balances);
-  } catch (error) {
-    console.error('取得 SPL 代幣餘額時出錯:', error);
-    res.status(500).json({ error: '取得 SPL 代幣餘額時出錯', details: error.message });
+    const response = await fetch(`https://solana-gateway.moralis.io/token/mainnet/${tokenaddress}/metadata`, options);
+    const data = await response.json();
+    res.json(data);
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Error fetching data');
   }
 });
 
-// **其餘代碼保持不變，或者根據之前的建議進行調整**
+// ** 新增取得 swaps 資料的路由 **
+app.get('/accountSwaps/:address', async (req, res) => {
+  const { address } = req.params;
+  console.log("Requesting swaps for address:", address);
+
+  const options = {
+    method: 'GET',
+    headers: {
+      accept: 'application/json',
+      'X-API-Key': SPL_NAME_API_KEY, 
+    },
+  };
+
+  try {
+    const response = await fetch(`https://solana-gateway.moralis.io/account/mainnet/${address}/swaps?order=DESC&limit=1`, options);
+    console.log("Moralis response status:", response.status);
+
+    if (!response.ok) {
+      return res.status(response.status).send("Moralis API returned an error");
+    }
+
+    const data = await response.json();
+    console.log("Data received:", data);
+    res.json(data);
+  } catch (error) {
+    console.error(error);
+    res.status(500).send('Error fetching swaps data');
+  }
+});
+
 
 // 在生產環境中，提供靜態檔案
 if (process.env.NODE_ENV === 'production') {
@@ -134,8 +169,6 @@ const server = app.listen(port, () => {
 
 // 設置 WebSocket 伺服器
 const wss = new WebSocket.Server({ server, path: '/ws' });
-
-// server.js
 
 wss.on('connection', (ws) => {
   console.log('前端已通过 WebSocket 连接');
@@ -157,7 +190,6 @@ wss.on('connection', (ws) => {
 
         for (const account of accounts) {
           if (!ws.subscribedAccounts.has(account)) {
-            // 如果尚未订阅该账号，则进行订阅
             const publicKey = new PublicKey(account);
 
             const subscriptionId = connection.onAccountChange(
@@ -189,7 +221,6 @@ wss.on('connection', (ws) => {
               'finalized' // Solana 的确认级别
             );
 
-            // 将账户和订阅 ID 存入 Map
             ws.subscribedAccounts.set(account, subscriptionId);
             console.log(`账户 ${account} 已订阅，订阅 ID: ${subscriptionId}`);
           } else {
@@ -245,10 +276,9 @@ wss.on('connection', (ws) => {
                   console.error(`处理账户 ${account} 的变动时出错:`, error);
                 }
               },
-              'finalized' // Solana 的确认级别
+              'finalized'
             );
 
-            // 将账户和订阅 ID 存入 Map
             ws.subscribedAccounts.set(account, subscriptionId);
             console.log(`账户 ${account} 已订阅，订阅 ID: ${subscriptionId}`);
           }
@@ -275,7 +305,6 @@ wss.on('connection', (ws) => {
 
   ws.on('close', () => {
     console.log('前端已断开连接，后端已接收');
-    // 移除所有账户的订阅
     ws.subscribedAccounts.forEach(async (subscriptionId, account) => {
       try {
         await connection.removeAccountChangeListener(subscriptionId);
@@ -284,6 +313,6 @@ wss.on('connection', (ws) => {
         console.error(`移除账户 ${account} 的监听器时出错:`, error);
       }
     });
-    ws.subscribedAccounts.clear(); // 清空 Map
+    ws.subscribedAccounts.clear();
   });
 });
