@@ -68,7 +68,19 @@ const Home = () => {
         throw new Error(`取得 swaps 資料錯誤, 狀態碼: ${response.status}`);
       }
       const jsonData = await response.json(); // 等待解析完整的 JSON 資料
-      setData(jsonData); // 將 JSON 物件設置到 data 狀態
+      const transaction = jsonData.result[0];
+      const buy_sell = transaction.transactionType
+      const platform = transaction.exchangeName
+      const time = transaction.blockTimestamp
+      const buy_token = transaction.bought.name
+      const buy_amount = transaction.bought.amount
+      const value = transaction.bought.usdAmount
+      const sell_token = transaction.sold.name
+      const sell_amoumt = transaction.sold.amount
+      const subCategory = transaction.newPosition
+      const walletAddress = transaction.walletAddress
+      const message = `${walletAddress} 在 ${time} 花費 ${sell_token} ${buy_sell} ${buy_token} ${buy_amount} 交易類型：${subCategory} 平台：${platform} 價值：${value}`
+      setData(message); // 將 JSON 物件設置到 data 狀態
     } catch (error) {
       console.error('取得 swaps 資料時出錯:', error);
     }
@@ -152,7 +164,7 @@ const Home = () => {
       <div className="right-side">
         <h3>買入代幣功能</h3>
         {/* 在此處添加您的買入代幣相關組件或代碼 */}
-        <p >{data ? JSON.stringify(data) : 'Loading...'}</p>
+        <p >{data ? JSON.stringify(data) : '追蹤列表尚未有新交易...'}</p>
       </div>
     </div>
   );
