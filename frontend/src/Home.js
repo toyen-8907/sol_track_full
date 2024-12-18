@@ -164,7 +164,7 @@ const Home = () => {
       <div className="right-side">
         <h3>買入代幣功能</h3>
         {/* 在此處添加您的買入代幣相關組件或代碼 */}
-        <p >{data ? JSON.stringify(data) : '追蹤列表尚未有新交易...'}</p>
+        <div>{data ? JSON.stringify(data) : '追蹤列表尚未有新交易...'}</div>
       </div>
     </div>
   );
