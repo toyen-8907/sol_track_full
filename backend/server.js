@@ -122,6 +122,12 @@ app.get('/solana-tokens/:tokenaddress', async (req, res) => {
   }
 });
 
+// 取得後端環境變數
+
+app.get('/getRpcUrl', (req, res) => {
+  res.json({ rpcWssUrl: process.env.WS_ENDPOINT , rpcHttpUrl:process.env.RPC_ENDPOINT}); 
+});
+
 // ** 新增取得 swaps 資料的路由 **
 app.get('/accountSwaps/:address', async (req, res) => {
   const { address } = req.params;

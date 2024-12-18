@@ -151,6 +151,11 @@ const Home = () => {
                 >
                   {account}
                 </h3>
+                <p 
+                  onClick={() => navigate(`/Log/${account}`)}
+                  style={{ cursor: 'pointer', color:'blue'}}>
+                    TX追蹤
+                </p>
                 <p>餘額: {currentBalance} $SOL</p>
                 <p>上次更新前的餘額: {previousBalance} $SOL</p>
                 <h4 style={{ color: percentageChange > 0 ? 'green' : 'red' }}>帳戶變動： {percentageChange}%</h4>

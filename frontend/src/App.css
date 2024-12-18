@@ -183,3 +183,44 @@ body {
 }
 
 
+/* app.css */
+.wallet-details {
+  padding: 20px;
+  border: 1px solid #ccc;
+}
+
+.sol-balance-section {
+  margin-bottom: 20px;
+}
+
+.change-positive {
+  color: green;
+}
+
+.change-negative {
+  color: red;
+}
+
+.spl-tokens-section {
+  margin-top: 20px;
+}
+
+.spl-tokens-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.spl-token-item {
+  border: 1px solid #aaa;
+  padding: 10px;
+}
+
+.new-token {
+  color: blue;
+}
+
+.loading {
+  font-size: 16px;
+  font-weight: bold;
+}

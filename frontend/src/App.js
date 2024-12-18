@@ -4,7 +4,7 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Home from './Home';
 import WalletDetails from './WalletDetails';
-
+import Log from './Log';
 const App = () => {
   return (
     <Router>
@@ -16,6 +16,7 @@ const App = () => {
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/wallet/:address" element={<WalletDetails />} />
+          <Route path="/Log/:address" element={<Log />} />
         </Routes>
       </div>
     </Router>
