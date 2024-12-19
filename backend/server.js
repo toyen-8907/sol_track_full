@@ -68,6 +68,19 @@ async function fetchAllSplTokenBalances(walletAddress) {
   }
 }
 
+// 定義取得交易資訊的函式
+async function fetchTransactionBySignature(txSig) {
+  try {
+    const transaction_data = await connection.getTransaction(txSig,{
+      maxSupportedTransactionVersion: 0,
+    });
+    return transaction_data; // 將 lamports 轉換為 SOL
+  } catch (error) {
+    console.error("取得 TX 時出錯:", error);
+    throw error;
+  }
+}
+
 // 假設您有一個 TokenListProvider（此處若無可略過）
 // async function getTokenMetadata(mintAddress) {
 //   const provider = new TokenListProvider();
@@ -121,6 +134,21 @@ app.get('/solana-tokens/:tokenaddress', async (req, res) => {
     res.status(500).send('Error fetching data');
   }
 });
+
+// === 新增的交易查詢 API 路由 ===
+app.get('/transaction/:sig', async (req, res) => {
+  const { sig } = req.params;
+  try {
+    // 不需要使用 signature()，直接使用 sig 字串即可
+    const transaction = await fetchTransactionBySignature(sig); 
+
+    res.json(transaction);
+  } catch (error) {
+    console.error("Error fetching transaction:", error);
+    res.status(500).json({ error: 'Error fetching transaction', details: error.message });
+  }
+});
+
 
 // 取得後端環境變數
 
