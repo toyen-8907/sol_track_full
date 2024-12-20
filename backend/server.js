@@ -263,6 +263,36 @@ wss.on('connection', (ws) => {
         }
       }
 
+      if (action === 'logsubscribe') {
+        const account = data.account;
+        if (!account) {
+          console.error('logsubscribe 请求中缺少 account 字段');
+          return;
+        }
+
+        if (!ws.subscribedAccounts.has(account)) {
+          const publicKey = new PublicKey(account);
+
+          // 使用 onLogs 來訂閱該帳號的日誌事件
+          const subscriptionId = connection.onLogs(
+            publicKey,
+            (logsInfo) => {
+              console.log(`收到 ${account} 的日志更新:`, logsInfo);
+              // 向前端發送日誌資訊
+              ws.send(
+                JSON.stringify({ type: 'logs', account, logs: logsInfo })
+              );
+            },
+            'confirmed'
+          );
+
+          ws.subscribedAccounts.set(account, subscriptionId);
+          console.log(`账户 ${account} 的日志已订阅，订阅 ID: ${subscriptionId}`);
+        } else {
+          console.log(`账户 ${account} 的日志已经订阅，跳过`);
+        }
+      }
+
       if (action === 'updateSubscriptions') {
         const newAccounts = data.accounts || [];
         const currentAccounts = Array.from(ws.subscribedAccounts.keys());
