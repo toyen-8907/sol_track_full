@@ -17,7 +17,13 @@ const Home = () => {
   const [balances, setBalances] = useState({});
   const [newAddress, setNewAddress] = useState('');
   const [data, setData] = useState(null);
-
+  const [accountChainInfo, setAcChainInfo] = useState([
+    'SOL',
+    'SOL',
+    'SOL',
+    'SOL',
+  ]);
+  const [newAddressChainInfo, setNewAddressChainInfo] = useState('');
   // 從後端獲取初始餘額
   useEffect(() => {
     const fetchBalances = async () => {
@@ -96,10 +102,11 @@ const Home = () => {
   const handleAddAccount = () => {
     if (newAddress && !accounts.includes(newAddress)) {
       setAccounts([...accounts, newAddress]);
+      setAcChainInfo([...accountChainInfo, newAddressChainInfo]);
       setNewAddress('');
+      setNewAddressChainInfo('');
     }
   };
-
   const handleSPLBalancesReceived = useCallback((account, balances) => {
     // 在这里处理 SPL 代币余额的更新
     console.log('收到 SPL 代币余额更新:', account, balances);
@@ -132,6 +139,17 @@ const Home = () => {
             value={newAddress}
             onChange={(e) => setNewAddress(e.target.value)}
           />
+          <select
+            value={newAddressChainInfo}
+            onChange={(e) => setNewAddressChainInfo(e.target.value)}
+          >
+            <option value="" disabled>
+              選擇公鏈
+            </option>
+            <option value="SOL">SOL</option>
+            <option value="ETH">ETH</option>
+            <option value="BSC">BSC</option>
+          </select>
           <button onClick={handleAddAccount}>新增錢包</button>
         </div>
 
