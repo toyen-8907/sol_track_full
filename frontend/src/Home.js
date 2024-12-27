@@ -83,9 +83,10 @@ const Home = () => {
       const value = transaction.bought.usdAmount
       const sell_token = transaction.sold.name
       const sell_amoumt = transaction.sold.amount
-      const subCategory = transaction.newPosition
+      const subCategory = transaction.subCategory
       const walletAddress = transaction.walletAddress
-      const message = `${walletAddress} 在 ${time} 花費 ${sell_token} ${buy_sell} ${buy_token} ${buy_amount} 交易類型：${subCategory} 平台：${platform} 價值：${value}`
+      const pairlabel = transaction.pariLabel
+      const message = `${walletAddress} 在 ${time} 花費 ${sell_token} ${buy_sell} ${buy_token} ${buy_amount} 交易類型：${subCategory} 平台：${platform} 價值：${value} USD 交易對 ${pairlabel}`
       setData(message); // 將 JSON 物件設置到 data 狀態
     } catch (error) {
       console.error('取得 swaps 資料時出錯:', error);

@@ -23,8 +23,8 @@ const LogPage = () => {
       if (msg.type === 'logs') {
         console.log('收到日誌資料：', msg);
         // 這裡的 msg.logsInfo 包含 signature
-        const  logs  = msg;
-        console.log('創建累積資料')
+        const  logs  = msg.logs;
+        console.log(`創建累積資料`)
         // 將這個新日誌累積到 logList 裏面
         setLogList((prevLogs) => {
           const updatedLogs = [...prevLogs, logs];
@@ -32,9 +32,10 @@ const LogPage = () => {
           return updatedLogs;
         });
         console.log('累積完成開始調用API')
-        if (logList[0].logs && logList[0].logs.signature) {
+        if (logList[0] && logList[0].signature) {
           try {
-            const response = await fetch(`http://localhost:5001/transaction/${logList[0].logs.signature}`);
+            const response = await fetch(`http://localhost:5001/transaction/${logList[0].signature}`);
+            console.log(`調用完成`)
             const txData = await response.json();
             console.log('交易資料:', txData);
 
