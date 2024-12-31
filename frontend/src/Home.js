@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import './App.css';
 import WebSocketComponent from './WebSocketComponent';
 import fetch from 'node-fetch';
+import bs58 from 'bs58'; // 確保安裝 bs58，用於判斷 Solana 地址
 
 const Home = () => {
   const [accounts, setAccounts] = useState([
@@ -24,33 +25,68 @@ const Home = () => {
     'SOL',
   ]);
   const [newAddressChainInfo, setNewAddressChainInfo] = useState('');
+  // 判斷是否為 EVM 地址
+  const isEVMAddress = (address) => {
+    return address.startsWith('0x') && address.length === 42 && /^[a-fA-F0-9]+$/.test(address.slice(2));
+  };
+
+  // 判斷是否為 Solana 地址
+  const isSolanaAddress = (address) => {
+    try {
+      const decoded = bs58.decode(address);
+      return decoded.length >= 32 && decoded.length <= 44;
+    } catch (error) {
+      return false;
+    }
+  };
   // 從後端獲取初始餘額
   useEffect(() => {
     const fetchBalances = async () => {
       try {
         const existingAccounts = Object.keys(balances);
         const newAccounts = accounts.filter(account => !existingAccounts.includes(account));
-
+  
         for (const account of newAccounts) {
-          const solResponse = await fetch(`http://localhost:5001/solBalance/${account}`);
-          if (!solResponse.ok) {
-            throw new Error(`HTTP error! status: ${solResponse.status}`);
+          // 判斷地址類型
+          if (isSolanaAddress(account)) {
+            // Solana 地址處理邏輯
+            const solResponse = await fetch(`http://localhost:5001/solBalance/${account}`);
+            if (!solResponse.ok) {
+              throw new Error(`Solana 餘額取得錯誤, 狀態碼: ${solResponse.status}`);
+            }
+            const solData = await solResponse.json();
+  
+            setBalances(prev => ({
+              ...prev,
+              [account]: {
+                current: solData.balance,
+                previous: 0,
+              },
+            }));
+          } else if (isEVMAddress(account)) {
+            // EVM 地址處理邏輯
+            const evmResponse = await fetch(`http://localhost:5001/evmBalance/${account}`);
+            if (!evmResponse.ok) {
+              throw new Error(`EVM 餘額取得錯誤, 狀態碼: ${evmResponse.status}`);
+            }
+            const evmData = await evmResponse.json();
+  
+            setBalances(prev => ({
+              ...prev,
+              [account]: {
+                current: evmData.balance,
+                previous: 0,
+              },
+            }));
+          } else {
+            console.warn(`未知地址類型: ${account}`);
           }
-          const solData = await solResponse.json();
-
-          setBalances(prev => ({
-            ...prev,
-            [account]: {
-              current: solData.balance,
-              previous: 0, // 新账户的上次余额默认为 0
-            },
-          }));
         }
       } catch (error) {
-        console.error('取得初始餘額時出錯:', error);
+        console.error('取得餘額時出錯:', error);
       }
     };
-
+  
     fetchBalances();
   }, [accounts]);
 
@@ -86,7 +122,7 @@ const Home = () => {
       const subCategory = transaction.subCategory
       const walletAddress = transaction.walletAddress
       const pairlabel = transaction.pariLabel
-      const message = `${walletAddress} 在 ${time} 花費 ${sell_token} ${buy_sell} ${buy_token} ${buy_amount} 交易類型：${subCategory} 平台：${platform} 價值：${value} USD 交易對 ${pairlabel}`
+      const message = `${walletAddress} 在 ${time} 花費 ${sell_token} ${sell_amoumt} ${buy_sell} ${buy_token} ${buy_amount} 交易類型：${subCategory} 平台：${platform} 價值：${value} USD 交易對 ${pairlabel}`
       setData(message); // 將 JSON 物件設置到 data 狀態
     } catch (error) {
       console.error('取得 swaps 資料時出錯:', error);
@@ -101,11 +137,14 @@ const Home = () => {
 
   // 處理新增錢包地址
   const handleAddAccount = () => {
-    if (newAddress && !accounts.includes(newAddress)) {
+    if (newAddress && !accounts.includes(newAddress) && (isSolanaAddress(newAddress) || isEVMAddress(newAddress))) {
       setAccounts([...accounts, newAddress]);
       setAcChainInfo([...accountChainInfo, newAddressChainInfo]);
       setNewAddress('');
       setNewAddressChainInfo('');
+    }
+    else{
+      alert("請輸入正確地址")
     }
   };
   const handleSPLBalancesReceived = useCallback((account, balances) => {
