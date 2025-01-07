@@ -7,7 +7,7 @@ const WebSocket = require('ws');
 const dotenv = require('dotenv');
 const cors = require('cors');
 const path = require('path');
-
+const AddressAlert = require('./src/routes/AddressAlert');
 dotenv.config();
 
 // 使用 node-fetch 模組
@@ -35,6 +35,16 @@ const connection = new Connection(RPC_ENDPOINT, {
 
 // 取得 SOL 餘額
 async function fetchSolBalance(walletAddress) {
+  try {
+    const balance = await connection.getBalance(new PublicKey(walletAddress));
+    return balance / 1000000000; // 將 lamports 轉換為 SOL
+  } catch (error) {
+    console.error("取得 SOL 餘額時出錯:", error);
+    throw error;
+  }
+}
+
+async function fetchEvmBalance(walletAddress) {
   try {
     const balance = await connection.getBalance(new PublicKey(walletAddress));
     return balance / 1000000000; // 將 lamports 轉換為 SOL
@@ -149,12 +159,6 @@ app.get('/transaction/:sig', async (req, res) => {
   }
 });
 
-
-// 取得後端環境變數
-
-app.get('/getRpcUrl', (req, res) => {
-  res.json({ rpcWssUrl: process.env.WS_ENDPOINT , rpcHttpUrl:process.env.RPC_ENDPOINT}); 
-});
 
 // ** 新增取得 swaps 資料的路由 **
 app.get('/accountSwaps/:address', async (req, res) => {
